@@ -1,19 +1,26 @@
-import React, { useRef, useState } from 'react';
-import { Animated, Pressable, SafeAreaView, StyleSheet, Text, TextInput, View } from 'react-native';
-
-const COLORS = {
-  primary: '#2A72FF', // blue
-  secondary: '#6B7280', // soft grey
-  accent: '#6A4CFF', // deep purple
-  highlight: '#3EE0FF', // cyan
-  background: '#F4F7FF',
-  card: '#ffffff',
-};
+import React, { useEffect, useRef, useState } from 'react';
+import { Animated, Pressable, SafeAreaView, StyleSheet, Text, TextInput, View, ScrollView } from 'react-native';
+import { vendorColors, baseShadows } from './vendorTheme';
 
 const VendorLoginScreen = ({ navigation }) => {
+  const colors = vendorColors;
+
   const [credentials, setCredentials] = useState({ identifier: '', password: '' });
   const [focus, setFocus] = useState({ identifier: false, password: false });
+  const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
   const scale = useRef(new Animated.Value(1)).current;
+  const intro = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.timing(intro, {
+      toValue: 1,
+      duration: 220,
+      useNativeDriver: true,
+    }).start();
+  }, [intro]);
 
   const onPressIn = () => {
     Animated.spring(scale, {
@@ -30,77 +37,159 @@ const VendorLoginScreen = ({ navigation }) => {
   };
 
   const handleLogin = () => {
+    if (!credentials.identifier.trim() || !credentials.password.trim()) {
+      setError('Please enter your work email and password.');
+      return;
+    }
+
+    setError('');
+    setLoading(true);
     console.log('Login (placeholder)', credentials);
     navigation.navigate('Inventory');
+    setTimeout(() => setLoading(false), 400);
   };
 
+  const canSubmit = credentials.identifier.trim() && credentials.password.trim();
+
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.blue }]}>
       <View style={styles.container}>
-        <View style={styles.bgLayerOne} />
-        <View style={styles.bgLayerTwo} />
+        <View style={[styles.gradientOverlay, { backgroundColor: colors.gradientEnd }]} />
+        <View style={[styles.gradientOverlaySoft, { backgroundColor: colors.gradientStart }]} />
 
-        <View style={styles.header}>
-          <View style={styles.logoStack}>
-            <Text style={[styles.logoOutline, styles.logoShadowPrimary]}>STORA</Text>
-            <Text style={[styles.logoOutline, styles.logoShadowAccent]}>STORA</Text>
-            <Text style={[styles.logoOutline, styles.logoFill]}>STORA</Text>
-          </View>
-          <View style={styles.logoSubStack}>
-            <Text style={[styles.logoSubOutline, styles.logoShadowPrimary]}>(Vendor)</Text>
-            <Text style={[styles.logoSubOutline, styles.logoShadowAccent]}>(Vendor)</Text>
-            <Text style={[styles.logoSubOutline, styles.logoFillSub]}>(Vendor)</Text>
-          </View>
-          <Text style={styles.brand}>snafleshub</Text>
-        </View>
-
-        <View style={styles.formCard}>
-          <View style={[styles.fieldOuter, focus.identifier && styles.fieldOuterFocused]}>
-            <View style={styles.fieldGradient} />
-            <View style={styles.fieldGradientAccent} />
-            <View style={styles.fieldInner}>
-              <TextInput
-                placeholder="Email or Mobile"
-                placeholderTextColor={COLORS.secondary}
-                keyboardType="email-address"
-                autoCapitalize="none"
-                value={credentials.identifier}
-                onChangeText={(text) => setCredentials((prev) => ({ ...prev, identifier: text }))}
-                onFocus={() => setFocus((p) => ({ ...p, identifier: true }))}
-                onBlur={() => setFocus((p) => ({ ...p, identifier: false }))}
-                style={styles.input}
-              />
+        <ScrollView
+          contentContainerStyle={{ flexGrow: 1 }}
+          bounces={false}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          <Animated.View
+            style={[
+              styles.content,
+              {
+                opacity: intro,
+                transform: [
+                  {
+                    translateY: intro.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [12, 0],
+                    }),
+                  },
+                ],
+              },
+            ]}
+          >
+            <View style={styles.header}>
+              <Text style={[styles.title, { color: colors.surface }]}>SH-Vendor</Text>
+              <Text style={[styles.subtitle, { color: colors.surface }]}>Verified Vendor Access Portal</Text>
             </View>
-          </View>
 
-          <View style={[styles.fieldOuter, focus.password && styles.fieldOuterFocused]}>
-            <View style={styles.fieldGradient} />
-            <View style={styles.fieldGradientAccent} />
-            <View style={styles.fieldInner}>
-              <TextInput
-                placeholder="Password"
-                placeholderTextColor={COLORS.secondary}
-                secureTextEntry={true}
-                value={credentials.password}
-                onChangeText={(text) => setCredentials((prev) => ({ ...prev, password: text }))}
-                onFocus={() => setFocus((p) => ({ ...p, password: true }))}
-                onBlur={() => setFocus((p) => ({ ...p, password: false }))}
-                style={styles.input}
-              />
+            <View
+              style={[
+                styles.formCard,
+                {
+                  backgroundColor: colors.surface,
+                  borderColor: colors.border,
+                  ...baseShadows.card,
+                },
+              ]}
+            >
+              <View style={styles.fieldGroup}>
+                <Text style={[styles.label, { color: colors.textSecondary }]}>Work Email</Text>
+                <View
+                  style={[
+                    styles.inputWrapper,
+                    { borderColor: focus.identifier ? colors.blue : colors.border, backgroundColor: colors.lightBg },
+                    focus.identifier && styles.inputWrapperFocused,
+                  ]}
+                >
+                  <TextInput
+                    placeholder="vendor@company.com"
+                    placeholderTextColor={colors.textMuted}
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                    value={credentials.identifier}
+                    onChangeText={(text) => setCredentials((prev) => ({ ...prev, identifier: text }))}
+                    onFocus={() => setFocus((p) => ({ ...p, identifier: true }))}
+                    onBlur={() => setFocus((p) => ({ ...p, identifier: false }))}
+                    style={[styles.input, { color: colors.text }]}
+                  />
+                </View>
+              </View>
+
+              <View style={styles.fieldGroup}>
+                <View style={styles.labelRow}>
+                  <Text style={[styles.label, { color: colors.textSecondary }]}>Password</Text>
+                  <Pressable onPress={() => setShowPassword((prev) => !prev)} hitSlop={8}>
+                    <Text style={[styles.link, { color: colors.blue }]}>{showPassword ? 'Hide' : 'Show'}</Text>
+                  </Pressable>
+                </View>
+                <View
+                  style={[
+                    styles.inputWrapper,
+                    { borderColor: focus.password ? colors.blue : colors.border, backgroundColor: colors.lightBg },
+                    focus.password && styles.inputWrapperFocused,
+                  ]}
+                >
+                  <TextInput
+                    placeholder="Password"
+                    placeholderTextColor={colors.textMuted}
+                    secureTextEntry={!showPassword}
+                    value={credentials.password}
+                    onChangeText={(text) => setCredentials((prev) => ({ ...prev, password: text }))}
+                    onFocus={() => setFocus((p) => ({ ...p, password: true }))}
+                    onBlur={() => setFocus((p) => ({ ...p, password: false }))}
+                    style={[styles.input, { color: colors.text }]}
+                  />
+                </View>
+              </View>
+
+              <View
+                style={[
+                  styles.infoBanner,
+                  {
+                    borderColor: error ? colors.blue : colors.border,
+                    backgroundColor: error ? 'rgba(78,108,184,0.1)' : colors.lightBg,
+                  },
+                ]}
+              >
+                <Text style={[styles.infoText, { color: error ? colors.blue : colors.textSecondary }]}>
+                  {error || 'Only approved vendors can access this portal.'}
+                </Text>
+              </View>
+
+              <Animated.View style={[styles.buttonWrapper, { transform: [{ scale }] }]}>
+                <Pressable
+                  style={[styles.loginButton, { backgroundColor: colors.blue }]}
+                  onPress={handleLogin}
+                  onPressIn={onPressIn}
+                  onPressOut={onPressOut}
+                  disabled={!canSubmit || loading}
+                >
+                  <View
+                    style={[
+                      styles.loginButtonOverlay,
+                      { backgroundColor: colors.purple, opacity: 0.65 },
+                  ]}
+                  pointerEvents="none"
+                />
+                <Text style={[styles.loginText, { color: colors.surface }]}>
+                  {loading ? 'Verifying...' : 'Login as Vendor'}
+                </Text>
+              </Pressable>
+            </Animated.View>
+
+              <View style={styles.linksRow}>
+                <Pressable onPress={() => console.log('Forgot Password')} hitSlop={8}>
+                  <Text style={[styles.link, { color: colors.blue }]}>Forgot password?</Text>
+                </Pressable>
+                <Pressable onPress={() => navigation.navigate('VendorType')} hitSlop={8}>
+                  <Text style={[styles.link, { color: colors.purple }]}>New vendor? Apply</Text>
+                </Pressable>
+              </View>
             </View>
-          </View>
-
-          <Animated.View style={[styles.buttonWrapper, { transform: [{ scale }] }]}>
-            <Pressable style={styles.loginButton} onPress={handleLogin} onPressIn={onPressIn} onPressOut={onPressOut}>
-              <View style={styles.loginButtonOverlay} pointerEvents="none" />
-              <Text style={styles.loginText}>Login</Text>
-            </Pressable>
           </Animated.View>
-
-          <Pressable onPress={() => console.log('Forgot Password')} hitSlop={8}>
-            <Text style={styles.forgotText}>Forgot Password?</Text>
-          </Pressable>
-        </View>
+        </ScrollView>
       </View>
     </SafeAreaView>
   );
@@ -109,179 +198,116 @@ const VendorLoginScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: COLORS.background,
   },
   container: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 24,
+    paddingHorizontal: 22,
     position: 'relative',
     overflow: 'hidden',
   },
-  bgLayerOne: {
+  gradientOverlay: {
     position: 'absolute',
-    width: 420,
-    height: 420,
-    borderRadius: 210,
-    backgroundColor: COLORS.primary,
-    opacity: 0.12,
-    top: -120,
-    right: -80,
-    transform: [{ rotate: '18deg' }],
+    top: -140,
+    left: -140,
+    right: -140,
+    bottom: -140,
+    opacity: 0.9,
+    transform: [{ rotate: '-10deg' }],
   },
-  bgLayerTwo: {
+  gradientOverlaySoft: {
     position: 'absolute',
-    width: 380,
-    height: 380,
-    borderRadius: 190,
-    backgroundColor: COLORS.accent,
-    opacity: 0.12,
-    bottom: -100,
+    top: -120,
     left: -120,
-    transform: [{ rotate: '-12deg' }],
+    right: -120,
+    bottom: -120,
+    opacity: 0.65,
+    transform: [{ rotate: '14deg' }],
   },
   header: {
     alignItems: 'center',
-    marginBottom: 28,
+    marginBottom: 18,
     zIndex: 2,
   },
   title: {
     fontSize: 36,
     fontWeight: '800',
-    color: COLORS.primary,
-    letterSpacing: 1,
+    letterSpacing: -0.4,
     textAlign: 'center',
-  },
-  logoStack: {
-    position: 'relative',
-    alignItems: 'center',
-  },
-  logoOutline: {
-    fontSize: 40,
-    fontWeight: '800',
-    letterSpacing: 2,
-    textAlign: 'center',
-    color: 'transparent',
-    textShadowOffset: { width: 0, height: 0 },
-    textShadowRadius: 6,
-  },
-  logoShadowPrimary: {
-    position: 'absolute',
-    color: '#ffffff',
-    textShadowColor: COLORS.primary,
-    opacity: 0.9,
-  },
-  logoShadowAccent: {
-    position: 'absolute',
-    color: '#ffffff',
-    textShadowColor: COLORS.accent,
-    opacity: 0.8,
-  },
-  logoFill: {
-    color: '#F4F7FF',
-    textShadowColor: COLORS.highlight,
-    textShadowRadius: 10,
-    opacity: 0.9,
-  },
-  logoSubStack: {
-    position: 'relative',
-    alignItems: 'center',
-    marginTop: 4,
-  },
-  logoSubOutline: {
-    fontSize: 18,
-    fontWeight: '600',
-    letterSpacing: 1,
-    textAlign: 'center',
-    color: 'transparent',
-    textShadowOffset: { width: 0, height: 0 },
-    textShadowRadius: 5,
-  },
-  logoFillSub: {
-    color: '#F4F7FF',
-    textShadowColor: COLORS.highlight,
-    textShadowRadius: 8,
-    opacity: 0.9,
   },
   subtitle: {
-    marginTop: 4,
-    fontSize: 18,
-    fontWeight: '600',
-    color: COLORS.secondary,
-    textAlign: 'center',
-  },
-  brand: {
     marginTop: 6,
-    fontSize: 11,
-    fontWeight: '300',
-    color: COLORS.secondary,
-    opacity: 0.6,
-    letterSpacing: 0.6,
+    fontSize: 16,
+    fontWeight: '600',
     textAlign: 'center',
+    opacity: 0.92,
+  },
+  content: {
+    width: '100%',
+    alignItems: 'center',
+    zIndex: 2,
   },
   formCard: {
     width: '100%',
-    maxWidth: 420,
-    backgroundColor: COLORS.card,
-    borderRadius: 18,
+    maxWidth: 440,
+    borderRadius: 16,
     paddingHorizontal: 18,
     paddingVertical: 20,
-    shadowColor: COLORS.accent,
+    shadowColor: '#0f172a',
     shadowOpacity: 0.12,
-    shadowOffset: { width: 0, height: 12 },
-    shadowRadius: 18,
-    elevation: 5,
+    shadowOffset: { width: 0, height: 16 },
+    shadowRadius: 24,
+    elevation: 7,
     borderWidth: 1,
-    borderColor: '#e3e8ff',
   },
-  fieldOuter: {
+  fieldGroup: {
     marginBottom: 14,
-    borderRadius: 16,
-    padding: 2,
-    overflow: 'hidden',
-    position: 'relative',
   },
-  fieldOuterFocused: {
-    shadowColor: COLORS.highlight,
-    shadowOpacity: 0.35,
-    shadowOffset: { width: 0, height: 10 },
-    shadowRadius: 16,
-    elevation: 6,
+  label: {
+    fontSize: 13,
+    fontWeight: '700',
+    marginBottom: 6,
   },
-  fieldGradient: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: COLORS.primary,
-    opacity: 0.8,
+  labelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 6,
   },
-  fieldGradientAccent: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: COLORS.accent,
-    opacity: 0.5,
-    transform: [{ rotate: '-8deg' }, { scale: 1.1 }],
-  },
-  fieldInner: {
-    backgroundColor: '#ffffff',
-    borderRadius: 14,
+  inputWrapper: {
+    borderWidth: 1,
+    borderRadius: 12,
     paddingHorizontal: 12,
     paddingVertical: 2,
+    height: 56,
+    justifyContent: 'center',
+  },
+  inputWrapperFocused: {
+    shadowColor: '#4E6CB8',
+    shadowOpacity: 0.16,
+    shadowOffset: { width: 0, height: 6 },
+    shadowRadius: 10,
+    elevation: 4,
   },
   input: {
     height: 48,
-    color: '#0f172a',
     fontSize: 15,
+  },
+  link: {
+    fontWeight: '600',
+    fontSize: 13,
   },
   buttonWrapper: {
     borderRadius: 14,
-    shadowColor: COLORS.accent,
-    shadowOpacity: 0.25,
-    shadowOffset: { width: 0, height: 14 },
-    shadowRadius: 16,
-    elevation: 8,
+    overflow: 'hidden',
     marginBottom: 12,
+    shadowOpacity: 0.2,
+    shadowOffset: { width: 0, height: 10 },
+    shadowRadius: 18,
+    elevation: 6,
   },
   loginButton: {
-    backgroundColor: COLORS.primary,
     paddingVertical: 16,
     borderRadius: 14,
     alignItems: 'center',
@@ -289,20 +315,25 @@ const styles = StyleSheet.create({
   },
   loginButtonOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: COLORS.accent,
-    opacity: 0.35,
-    transform: [{ translateY: -10 }, { rotate: '-8deg' }],
+    opacity: 0.45,
   },
   loginText: {
-    color: '#f8fbff',
-    fontWeight: '700',
-    fontSize: 16,
+    fontWeight: '800',
+    fontSize: 15,
   },
-  forgotText: {
-    textAlign: 'center',
-    color: COLORS.highlight,
-    fontWeight: '600',
-    fontSize: 14,
+  linksRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  infoBanner: {
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 14,
+  },
+  infoText: {
+    fontSize: 13,
   },
 });
 
