@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { vendorColors, baseShadows } from './vendorTheme';
 
 const DeclarationScreen = ({ navigation }) => {
@@ -15,10 +16,14 @@ const DeclarationScreen = ({ navigation }) => {
   const allChecked = checks.correct && checks.policies && checks.approval;
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.blue }]}>
+    <SafeAreaView
+      edges={['top', 'right', 'bottom', 'left']}
+      style={[styles.safeArea, { backgroundColor: colors.blue }]}
+    >
       <View style={styles.container}>
-        <View style={[styles.gradientOverlay, { backgroundColor: colors.gradientEnd }]} />
-        <View style={[styles.gradientOverlaySoft, { backgroundColor: colors.gradientStart }]} />
+        {/* Background layers set to non-interactive to avoid blocking scroll/taps */}
+        <View style={[styles.gradientOverlay, { backgroundColor: colors.gradientEnd }]} pointerEvents="none" />
+        <View style={[styles.gradientOverlaySoft, { backgroundColor: colors.gradientStart }]} pointerEvents="none" />
 
         <ScrollView contentContainerStyle={styles.scrollContent}>
           <View style={styles.header}>
